@@ -1,18 +1,5 @@
-
-
-<script lang="ts" setup>
-/* eslint-disable */
-import SymText from './components/SymText.vue';
-import NavBar from './components/NavBar.vue';
-
-let displayedComponent = SymText;
-
-//recuperer le btn cliqué du menu pour afficher le bon composant
-</script>
-
 <template>
-  <component :is="NavBar" />
-  <component :is="displayedComponent" />
+   <router-view></router-view>
 </template>
 
 <style>
