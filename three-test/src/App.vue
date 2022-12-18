@@ -2,14 +2,16 @@
 
 <script lang="ts" setup>
 /* eslint-disable */
-import FirstTest from './components/FirstTest.vue';
+import SymText from './components/SymText.vue';
+import NavBar from './components/NavBar.vue';
 
-let displayedComponent = FirstTest;
+let displayedComponent = SymText;
 
 //recuperer le btn cliqué du menu pour afficher le bon composant
 </script>
 
 <template>
+  <component :is="NavBar" />
   <component :is="displayedComponent" />
 </template>
 
