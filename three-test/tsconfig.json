@@ -1,8 +1,8 @@
 {
-  "compilerOptions": {
-    "target": "esnext",
+  "compilerOptions": { 
+    "target": "es6",
     "module": "esnext",
-    "strict": true,
+    "strict": false,
     "jsx": "preserve",
     "moduleResolution": "node",
     "experimentalDecorators": true,
@@ -13,10 +13,12 @@
     "forceConsistentCasingInFileNames": true,
     "useDefineForClassFields": true,
     "sourceMap": true,
+    "noImplicitAny":false,
     "baseUrl": ".",
     "types": [
       "webpack-env"
     ],
+    "suppressImplicitAnyIndexErrors": true,
     "paths": {
       "@/*": [
         "src/*"
