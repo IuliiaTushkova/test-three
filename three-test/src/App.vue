@@ -1,26 +1,25 @@
-<template>
-    <FirstTest></FirstTest>
-</template>
 
-<script lang="ts">
-import { Options, Vue } from 'vue-class-component';
+
+<script lang="ts" setup>
+/* eslint-disable */
 import FirstTest from './components/FirstTest.vue';
 
-@Options({
-  components: {
-    FirstTest,
-  },
-})
-export default class App extends Vue {}
+let displayedComponent = FirstTest;
+
+//recuperer le btn cliqué du menu pour afficher le bon composant
 </script>
 
+<template>
+  <component :is="displayedComponent" />
+</template>
+
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
+  #app {
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: center;
+    color: #2c3e50;
+    margin-top: 60px;
+  }
 </style>
