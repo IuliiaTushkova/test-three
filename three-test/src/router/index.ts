@@ -7,17 +7,19 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'home',
-    component: HomeView
-  },
-  {
-    path: '/sym-text',
-    name: 'sym-text',
-    component: SymText
-  },
-  {
-    path: '/bon-homme',
-    name: 'bon-homme',
-    component: BonHomme
+    component: HomeView,
+    children: [
+        {
+            path: '/sym-text',
+            name: 'sym-text',
+            component: SymText
+          },
+          {
+            path: '/bon-homme',
+            name: 'bon-homme',
+            component: BonHomme
+          },
+    ]
   },
 ]
 

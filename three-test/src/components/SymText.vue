@@ -12,7 +12,6 @@
 
 
   onMounted(() => {
-    console.log('on mounted');
     initSymText();
 
     function initSymText() {

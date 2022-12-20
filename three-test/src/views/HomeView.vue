@@ -4,8 +4,9 @@
 /* eslint-disable */
 import SymText from '../components/SymText.vue';
 import BonHomme from '../components/BonHomme.vue';
-import { ref } from 'vue'
-
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+const router = useRouter();
 const menuList = [
   {
     icon: 'help',
@@ -23,10 +24,11 @@ let displayedComponent = SymText;
 let drawer = ref(false);
 
 function switchCentralComponent(event) { 
-  this.$router.push('/sym-text');
+    console.log('coucoucocuouco');
+    router.push('/sym-text');
 
   const lbl = event.target.innerText;
-  lbl == "BonHomme" ? displayedComponent = BonHomme : displayedComponent = SymText;
+  lbl == "SymText" ? router.push('/sym-text') : router.push('/bon-homme');
 
 }
 
@@ -54,11 +56,11 @@ function switchCentralComponent(event) {
           <q-list>
 
             <template v-for="(menuItem, index) in menuList" :key="index">
-              <q-item clickable :active="menuItem.label === 'Outbox'" v-ripple>
+              <q-item clickable :active="menuItem.label === 'Outbox'" v-ripple @click="switchCentralComponent($event)">
                 <q-item-section avatar>
                   <q-icon :name="menuItem.icon" />
                 </q-item-section>
-                <q-item-section @click="switchCentralComponent($event)">
+                <q-item-section>
                   {{ menuItem.label }}
                 </q-item-section>
               </q-item>
