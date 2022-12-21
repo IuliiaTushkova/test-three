@@ -1,16 +1,25 @@
 <template>
     <div>
+        <div class="character-switch-container">
+            <q-btn-toggle
+            v-model="character"
+            @click="changeCharacter"
+            toggle-color="primary"
+            :options="[
+                {label: 'Skeletton', value: 'skeletton'},
+                {label: 'Fille', value: 'girl'},
+                {label: 'Dancer', value: 'dancer'},
+            ]"
+            />
+        </div>
+    
       <div id="container"></div>
-      <div id="info">
-          <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - Skeletal Additive Animation Blending
-          (model from <a href="https://www.mixamo.com/" target="_blank" rel="noopener">mixamo.com</a>)<br/>
-      </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-/* eslint-disable */
-    import { onMounted } from 'vue';
+    /* eslint-disable */
+    import { onMounted, ref } from 'vue';
     import * as THREE from 'three';
     import Stats from 'three/examples/jsm/libs/stats.module.js';
     import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
@@ -37,19 +46,31 @@
     };
     let panelSettings, numAnimations;
 
+    function getModelPath() {
+        let format = 'glb';
+        return `models/gltf/${character.value}.${format}`;
+    }
+
+    // declare a ref to hold the element reference
+    // the name must match template ref value
+    const character = ref('skeletton');
     onMounted(() => {
-        init();
+        init( getModelPath() );
     });
 
-	
+    function changeCharacter() {
+        init( getModelPath() );
+    }
 
-    function init() {
+    
 
+
+    function init(character:string) {
+        console.log('------------------ init ---------------------------');
         const container = document.getElementById('container');
-
+        container.innerHTML = "";
         clock = new THREE.Clock();
         scene = new THREE.Scene();
-
         
         scene.background = new THREE.Color(	'#9ADFF8' );
         scene.fog = new THREE.Fog( '#F0FFFF', 20, 100);
@@ -110,8 +131,6 @@
         meshRightLine.position.x = 2.5;
         scene.add( meshRightLine );
 
-
-
         //LUMIERE
 
         const hemiLight = new THREE.HemisphereLight( 0xffffff, "#f2b705");
@@ -128,17 +147,11 @@
         dirLight.shadow.camera.near = 0.1;
         dirLight.shadow.camera.far = 40;
         scene.add( dirLight );
-
         
         //----------- MODEL ------------------------------------
         const loader = new GLTFLoader();
 
-        const stepPerson = 'models/gltf/Xbot.glb';
-        // const rumba = 'models/gltf/test/scene.gltf';
-        // const salsa = 'models/gltf/salsaDancing.fbx';
-
-        loader.load( stepPerson, function ( gltf ) {
-
+        loader.load( character, function ( gltf ) {
             model = gltf.scene;
             scene.add( model );
 
@@ -151,47 +164,39 @@
             skeleton = new THREE.SkeletonHelper( model );
             skeleton.visible = false;
             scene.add( skeleton );
-
             const animations = gltf.animations;
             mixer = new THREE.AnimationMixer( model );
 
             numAnimations = animations.length;
 
             for ( let i = 0; i !== numAnimations; ++ i ) {
-
-                let clip = animations[ i ];
+                let clip = gltf.animations[ i ];
                 const name = clip.name;
-
-                if ( baseActions[ name ] ) {
-
+                if(character !== "models/gltf/skeletton.glb") {
+                    console.log('pas skeletton');
                     const action = mixer.clipAction( clip );
                     activateAction( action );
+                    allActions.push( action );
+                }
+                if ( baseActions[ name ] ) {
+                    const action = mixer.clipAction( clip );
+                    activateActionSkeletton( action );
                     baseActions[ name ].action = action;
                     allActions.push( action );
-
                 } else if ( additiveActions[ name ] ) {
-
                     // Make the clip additive and remove the reference frame
-
                     THREE.AnimationUtils.makeClipAdditive( clip );
 
-                    if ( clip.name.endsWith( '_pose' ) ) {
-
-                        clip = THREE.AnimationUtils.subclip( clip, clip.name, 2, 3, 30 );
-
-                    }
-
+                    if ( clip.name.endsWith( '_pose' ) )  clip = THREE.AnimationUtils.subclip( clip, clip.name, 2, 3, 30 );
+                    
                     const action = mixer.clipAction( clip );
-                    activateAction( action );
+                    activateActionSkeletton( action );
                     additiveActions[ name ].action = action;
                     allActions.push( action );
                 }
             }
-
-           createPanel();
-
-           animate();
-
+            if(character === "models/gltf/skeletton.glb") createPanel();
+            animate(character);
         } );
 
         renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -217,176 +222,181 @@
         window.addEventListener( 'resize', onWindowResize );
     }
 
-			function createPanel() {
+    function createPanel() {
 
-				const panel = new GUI( { width: 310 } );
+        const panel = new GUI( { width: 310 } );
+        const folder1 = panel.addFolder( 'Base Actions' );
+        const folder2 = panel.addFolder( 'Additive Action Weights' );
+        const folder3 = panel.addFolder( 'General Speed' );
 
-				const folder1 = panel.addFolder( 'Base Actions' );
-				const folder2 = panel.addFolder( 'Additive Action Weights' );
-				const folder3 = panel.addFolder( 'General Speed' );
+        panelSettings = {
+            'modify time scale': 1.0
+        };
 
-				panelSettings = {
-					'modify time scale': 1.0
-				};
+        const baseNames = [ 'None', ...Object.keys( baseActions ) ];
 
-				const baseNames = [ 'None', ...Object.keys( baseActions ) ];
+        for ( let i = 0, l = baseNames.length; i !== l; ++ i ) {
+            const name = baseNames[ i ];
+            const settings = baseActions[ name ];
+            panelSettings[ name ] = function () {
+                const currentSettings = baseActions[ currentBaseAction ];
+                const currentAction = currentSettings ? currentSettings.action : null;
+                const action = settings ? settings.action : null;
+                if ( currentAction !== action ) prepareCrossFade( currentAction, action, 0.35 );
+            };
+            crossFadeControls.push( folder1.add( panelSettings, name ) );
+        }
 
-				for ( let i = 0, l = baseNames.length; i !== l; ++ i ) {
-					const name = baseNames[ i ];
-					const settings = baseActions[ name ];
-					panelSettings[ name ] = function () {
-						const currentSettings = baseActions[ currentBaseAction ];
-						const currentAction = currentSettings ? currentSettings.action : null;
-						const action = settings ? settings.action : null;
+        for ( const name of Object.keys( additiveActions ) ) {
+            const settings = additiveActions[ name ];
+            panelSettings[ name ] = settings.weight;
+            folder2.add( panelSettings, name, 0.0, 1.0, 0.01 ).listen().onChange( function ( weight ) {
+                setWeight( settings.action, weight );
+                settings.weight = weight;
+            } );
+        }
 
-						if ( currentAction !== action ) prepareCrossFade( currentAction, action, 0.35 );
-					};
-					crossFadeControls.push( folder1.add( panelSettings, name ) );
-				}
+        folder3.add( panelSettings, 'modify time scale', 0.0, 1.5, 0.01 ).onChange( modifyTimeScale );
+        folder1.open();
+        folder2.open();
+        folder3.open();
 
-				for ( const name of Object.keys( additiveActions ) ) {
-					const settings = additiveActions[ name ];
-					panelSettings[ name ] = settings.weight;
-					folder2.add( panelSettings, name, 0.0, 1.0, 0.01 ).listen().onChange( function ( weight ) {
-						setWeight( settings.action, weight );
-						settings.weight = weight;
-					} );
-				}
+        crossFadeControls.forEach( function ( control ) {
+            control.setInactive = function () {
+                control.domElement.classList.add( 'control-inactive' );
+            };
+            control.setActive = function () {
+                control.domElement.classList.remove( 'control-inactive' );
+            };
+            const settings = baseActions[ control.property ];
+            if ( ! settings || ! settings.weight ) {
+                control.setInactive();
+            }
+        } );
+    }
 
-				folder3.add( panelSettings, 'modify time scale', 0.0, 1.5, 0.01 ).onChange( modifyTimeScale );
-				folder1.open();
-				folder2.open();
-				folder3.open();
+    function activateAction( action ) {
+        const clip = action.getClip();
+        const settings = baseActions[ clip.name ] || additiveActions[ clip.name ];
+        action.play();
+    }
 
-				crossFadeControls.forEach( function ( control ) {
-					control.setInactive = function () {
-						control.domElement.classList.add( 'control-inactive' );
-					};
-					control.setActive = function () {
-					    control.domElement.classList.remove( 'control-inactive' );
-					};
-					const settings = baseActions[ control.property ];
-					if ( ! settings || ! settings.weight ) {
-						control.setInactive();
-					}
-				} );
-			}
+    function activateActionSkeletton( action ) {
+        const clip = action.getClip();
+        const settings = baseActions[ clip.name ] || additiveActions[ clip.name ];
+        setWeight( action, settings.weight );
+        action.play();
+    }
 
-			function activateAction( action ) {
+    function modifyTimeScale( speed ) {
+        mixer.timeScale = speed;
+    }
 
-				const clip = action.getClip();
-				const settings = baseActions[ clip.name ] || additiveActions[ clip.name ];
-				setWeight( action, settings.weight );
-				action.play();
-			}
+    function prepareCrossFade( startAction, endAction, duration ) {
+        // If the current action is 'idle', execute the crossfade immediately;
+        // else wait until the current action has finished its current loop
+        if ( currentBaseAction === 'idle' || ! startAction || ! endAction ) {
+            executeCrossFade( startAction, endAction, duration );
+        } else {
+            synchronizeCrossFade( startAction, endAction, duration );
+        }
+        // Update control colors
+        if ( endAction ) {
+            const clip = endAction.getClip();
+            currentBaseAction = clip.name;
+        } else {
+            currentBaseAction = 'None';
+        }
+        crossFadeControls.forEach( function ( control ) {
+            const name = control.property;
+            if ( name === currentBaseAction ) {
+                control.setActive();
+            } else {
+                control.setInactive();
+            }
+        } );
+    }
 
-			function modifyTimeScale( speed ) {
-			    mixer.timeScale = speed;
-			}
+    function synchronizeCrossFade( startAction, endAction, duration ) {
+        mixer.addEventListener( 'loop', onLoopFinished );
+        function onLoopFinished( event ) {
+            if ( event.action === startAction ) {
+                mixer.removeEventListener( 'loop', onLoopFinished );
+                executeCrossFade( startAction, endAction, duration );
+            }
+        }
+    }
 
-			function prepareCrossFade( startAction, endAction, duration ) {
-				// If the current action is 'idle', execute the crossfade immediately;
-				// else wait until the current action has finished its current loop
+    function executeCrossFade( startAction, endAction, duration ) {
+        // Not only the start action, but also the end action must get a weight of 1 before fading
+        // (concerning the start action this is already guaranteed in this place)
+        if ( endAction ) {
+            setWeight( endAction, 1 );
+            endAction.time = 0;
+            if ( startAction ) {
+                // Crossfade with warping
+                startAction.crossFadeTo( endAction, duration, true );
+            } else {
+                // Fade in
+                endAction.fadeIn( duration );
+            }
+        } else {
+            // Fade out
+            startAction.fadeOut( duration );
+        }
+    }
 
-				if ( currentBaseAction === 'idle' || ! startAction || ! endAction ) {
-					executeCrossFade( startAction, endAction, duration );
-				} else {
-					synchronizeCrossFade( startAction, endAction, duration );
-				}
-				// Update control colors
-				if ( endAction ) {
-					const clip = endAction.getClip();
-					currentBaseAction = clip.name;
-				} else {
-					currentBaseAction = 'None';
-				}
-				crossFadeControls.forEach( function ( control ) {
-					const name = control.property;
-					if ( name === currentBaseAction ) {
-						control.setActive();
-					} else {
-						control.setInactive();
-					}
-				} );
-			}
+    // This function is needed, since animationAction.crossFadeTo() disables its start action and sets
+    // the start action's timeScale to ((start animation's duration) / (end animation's duration))
 
-			function synchronizeCrossFade( startAction, endAction, duration ) {
-				mixer.addEventListener( 'loop', onLoopFinished );
-				function onLoopFinished( event ) {
-					if ( event.action === startAction ) {
-						mixer.removeEventListener( 'loop', onLoopFinished );
-						executeCrossFade( startAction, endAction, duration );
-					}
-				}
-			}
+    function setWeight( action, weight ) {
 
-			function executeCrossFade( startAction, endAction, duration ) {
-				// Not only the start action, but also the end action must get a weight of 1 before fading
-				// (concerning the start action this is already guaranteed in this place)
-				if ( endAction ) {
-					setWeight( endAction, 1 );
-					endAction.time = 0;
-					if ( startAction ) {
-						// Crossfade with warping
-						startAction.crossFadeTo( endAction, duration, true );
-					} else {
-						// Fade in
-						endAction.fadeIn( duration );
-					}
-				} else {
-					// Fade out
-					startAction.fadeOut( duration );
-				}
-			}
+        action.enabled = true;
+        action.setEffectiveTimeScale( 1 );
+        action.setEffectiveWeight( weight );
 
-			// This function is needed, since animationAction.crossFadeTo() disables its start action and sets
-			// the start action's timeScale to ((start animation's duration) / (end animation's duration))
+    }
 
-			function setWeight( action, weight ) {
+    function onWindowResize() {
 
-				action.enabled = true;
-				action.setEffectiveTimeScale( 1 );
-				action.setEffectiveWeight( weight );
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
 
-			}
+        renderer.setSize( window.innerWidth, window.innerHeight );
 
-			function onWindowResize() {
+    }
 
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
+    function animate(character) {
 
-				renderer.setSize( window.innerWidth, window.innerHeight );
+        // Render loop
 
-			}
+        requestAnimationFrame( animate );
+        
+        if(allActions.length > 0) {
+            for ( let i = 0; i !== numAnimations; ++ i ) {
 
-			function animate() {
+                const action = allActions[ i ];
+                const clip = action.getClip();
+                if(character === 'models/gltf/skeletton.glb') {
+                    const settings = baseActions[ clip.name ] || additiveActions[ clip.name ];
+                    settings.weight = action.getEffectiveWeight();
+                }
+            }
+        }
 
-				// Render loop
+        // Get the time elapsed since the last frame, used for mixer update
 
-				requestAnimationFrame( animate );
+        const mixerUpdateDelta = clock.getDelta();
 
-				for ( let i = 0; i !== numAnimations; ++ i ) {
+        // Update the animation mixer, the stats panel, and render this frame
 
-					const action = allActions[ i ];
-					const clip = action.getClip();
-					const settings = baseActions[ clip.name ] || additiveActions[ clip.name ];
-					settings.weight = action.getEffectiveWeight();
+        mixer.update( mixerUpdateDelta );
 
-				}
+        stats.update();
 
-				// Get the time elapsed since the last frame, used for mixer update
+        renderer.render( scene, camera );
 
-				const mixerUpdateDelta = clock.getDelta();
-
-				// Update the animation mixer, the stats panel, and render this frame
-
-				mixer.update( mixerUpdateDelta );
-
-				stats.update();
-
-				renderer.render( scene, camera );
-
-			}
+    }
 
 </script>
 
@@ -394,4 +404,9 @@
 
 
 <style>
+
+    .character-switch-container {
+        position: absolute;
+        left: 15%;
+    }
 </style>

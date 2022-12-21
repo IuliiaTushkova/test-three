@@ -16,18 +16,30 @@
         label: 'BonHomme',
         separator: false
     },
+    {
+        icon: 'help',
+        label: 'SimpleScene',
+        separator: false
+    },
     ]
-    let displayedComponent = SymText;
 
     let drawer = ref(false);
 
     function switchCentralComponent(event) { 
-        console.log('coucoucocuouco');
-        router.push('/sym-text');
-
-    const lbl = event.target.innerText;
-    lbl == "SymText" ? router.push('/sym-text') : router.push('/bon-homme');
-
+        const lbl = event.target.innerText;
+        switch (lbl) {
+            case 'SymText':
+                router.push('/sym-text');
+                break;
+            case 'BonHomme':
+                router.push('/bon-homme');
+                break;
+            case 'SimpleScene':
+                router.push('/simple-scene');
+                break;
+            default: router.push('/sym-text');
+                break;
+        }
     }
 </script>
 
