@@ -7,6 +7,8 @@
             toggle-color="primary"
             :options="[
                 {label: 'Skeletton', value: 'skeletton'},
+                {label: 'Skeleton Multiple Meshes', value: 'skeleton3'},
+                {label: 'Skeleton Symalean', value: 'skelettonSymalean'},
                 {label: 'Fille', value: 'girl'},
                 {label: 'Dancer', value: 'dancer'},
             ]"
@@ -53,7 +55,7 @@
 
     // declare a ref to hold the element reference
     // the name must match template ref value
-    const character = ref('skeletton');
+    const character = ref('skeleton3');
     onMounted(() => {
         init( getModelPath() );
     });
@@ -66,13 +68,13 @@
 
 
     function init(character:string) {
-        console.log('------------------ init ---------------------------');
+        console.log('------------------ init ---------------------------', character);
         const container = document.getElementById('container');
         container.innerHTML = "";
         clock = new THREE.Clock();
         scene = new THREE.Scene();
         
-        scene.background = new THREE.Color(	'#9ADFF8' );
+        scene.background = new THREE.Color(	'white' );
         scene.fog = new THREE.Fog( '#F0FFFF', 20, 100);
 
 
@@ -107,7 +109,6 @@
         mesh.receiveShadow = true;
         scene.add( mesh );
 
-
         //middle line
 
         const meshMiddleLine = new THREE.Mesh( new THREE.PlaneGeometry( 0.1, 100 ), new THREE.MeshPhongMaterial( { color: '#FFFFFF', depthWrite: false } ) );
@@ -133,26 +134,42 @@
 
         //LUMIERE
 
-        const hemiLight = new THREE.HemisphereLight( 0xffffff, "#f2b705");
+        const hemiLight = new THREE.HemisphereLight( '#9ADFF8', "white", 0.2);
         hemiLight.position.set( 0, 20, 0 );
         scene.add( hemiLight );
 
         const dirLight = new THREE.DirectionalLight( 0xffffff );
         dirLight.position.set( 20, 10, 10 );
         dirLight.castShadow = true;
-        dirLight.shadow.camera.top = 7;
-        dirLight.shadow.camera.bottom = - 2;
-        dirLight.shadow.camera.left = - 4;
-        dirLight.shadow.camera.right = 2;
-        dirLight.shadow.camera.near = 0.1;
-        dirLight.shadow.camera.far = 40;
+        //dirLight.shadow.camera.top = 7;
+        // dirLight.shadow.camera.bottom = - 2;
+        // dirLight.shadow.camera.left = - 4;
+        // dirLight.shadow.camera.right = 2;
+        // dirLight.shadow.camera.near = 0.1;
+        // dirLight.shadow.camera.far = 40;
         scene.add( dirLight );
         
         //----------- MODEL ------------------------------------
         const loader = new GLTFLoader();
 
         loader.load( character, function ( gltf ) {
+            console.log('gltf : ', gltf);
             model = gltf.scene;
+            console.log('jointures : ', model.children[0].children[1].children[0].material.color);
+            
+            //******************    per mesh  *************************************************
+
+            model.children[0].children[1].children[1].material.color = new THREE.Color(	'red' );
+            //material name model.children[0].children[1].children[1].material.name;
+            //******************************************************************************* */
+            //tous les os --------------------------------------------------------------------
+            //model.children[0].children[2].material.color = new THREE.Color(	'#2A4154' );
+            //---------------------------------------------------------------------------------------
+
+
+            //tous les jointures --------------------------------------------------------------------
+            //model.children[0].children[1].material.color = new THREE.Color(	'#FF935A' );
+            //---------------------------------------------------------------------------------------
             scene.add( model );
 
             model.traverse( function ( object ) {
@@ -172,7 +189,8 @@
             for ( let i = 0; i !== numAnimations; ++ i ) {
                 let clip = gltf.animations[ i ];
                 const name = clip.name;
-                if(character !== "models/gltf/skeletton.glb") {
+                console.log('charachter : ', character);
+                if( !["models/gltf/skeletton.glb", "models/gltf/skeleton3.glb", "models/gltf/skelettonSymalean.glb", "models/gltf/skeleton3.glb" ].includes(character)) {
                     console.log('pas skeletton');
                     const action = mixer.clipAction( clip );
                     activateAction( action );
@@ -195,7 +213,7 @@
                     allActions.push( action );
                 }
             }
-            if(character === "models/gltf/skeletton.glb") createPanel();
+            if(["models/gltf/skeletton.glb", "models/gltf/skeleton3.glb", "models/gltf/skelettonSymalean.glb", "models/gltf/skeleton3.glb" ].includes(character)) createPanel();
             animate(character);
         } );
 
@@ -350,11 +368,9 @@
     // the start action's timeScale to ((start animation's duration) / (end animation's duration))
 
     function setWeight( action, weight ) {
-
         action.enabled = true;
         action.setEffectiveTimeScale( 1 );
         action.setEffectiveWeight( weight );
-
     }
 
     function onWindowResize() {
