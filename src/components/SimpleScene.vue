@@ -6,31 +6,81 @@
 
 <script lang="ts" setup>
     /* eslint-disable */
-    import { onMounted, ref } from 'vue';
+    import { onMounted } from 'vue';
     import * as THREE from 'three';
-    import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
     import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+    import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+     import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 
     let scene, renderer, camera;
     let model, skeleton, mixer, clock;
+    let resultDisplayed = false;
 
-    const crossFadeControls = [];
+    let speed = 0.6;
 
-    let currentBaseAction = 'idle';
-    const allActions = [];
-    const baseActions = {
-        idle: { weight: 1 },
-        walk: { weight: 0 },
-        run: { weight: 0 }
-    };
-    const additiveActions = {
-        sneak_pose: { weight: 0 },
-        sad_pose: { weight: 0 },
-        agree: { weight: 0 },
-        headShake: { weight: 0 }
-    };
-    let panelSettings, numAnimations;
+    const fakeData = [ 
+                {
+                    analysisId: 1744,
+                    bodyPartName: "SCORE_WRIST_LEFT",
+                    grid:"RULA",
+                    gridValue:1
+                },
+                {
+                    analysisId: 1744,
+                    bodyPartName: "SCORE_ELBOW_RIGHT",
+                    grid:"RULA",
+                    gridValue:1.8
+                },
+                {
+                    analysisId: 1744,
+                    bodyPartName: "SCORE_ELBOW_LEFT",
+                    grid:"RULA",
+                    gridValue:2,
+                },
+                {
+                    analysisId: 1744,
+                    bodyPartName: "SCORE_SHOULDER_RIGHT",
+                    grid:"RULA",
+                    gridValue:1.3
+                },
+                {
+                    analysisId: 1744,
+                    bodyPartName: 'SCORE_SHOULDER_LEFT',
+                    grid:"RULA",
+                    gridValue:8
+                },
+                {
+                    analysisId: 1744,
+                    bodyPartName: 'SCORE_BACK',
+                    grid:"RULA",
+                    gridValue:4
+                },
+                {
+                    analysisId: 1744,
+                    bodyPartName: 'SCORE_NECK',
+                    grid:"RULA",
+                    gridValue:1.3
+                },
+                {
+                    analysisId: 1744,
+                    bodyPartName:'SCORE_WRIST_RIGHT',
+                    grid:"RULA",
+                    gridValue:7
+                }
+            ];
+
+    const indexAnalyseMap = [
+        'noAnalysedPart',
+        'SCORE_NECK',
+        'SCORE_SHOULDER_LEFT',
+        'SCORE_SHOULDER_RIGHT',
+        'SCORE_BACK',
+        'SCORE_ELBOW_LEFT',
+        'SCORE_ELBOW_RIGHT',
+        'SCORE_WRIST_LEFT',
+        'SCORE_WRIST_RIGHT'
+    ];
 
     // declare a ref to hold the element reference
     // the name must match template ref value
@@ -38,10 +88,10 @@
         init();
     });
 
-
-
     function init() {
         const container = document.getElementById('container');
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
         container.innerHTML = "";
         clock = new THREE.Clock();
         scene = new THREE.Scene();
@@ -49,16 +99,13 @@
         scene.background = new THREE.Color(	'white' );
         scene.fog = new THREE.Fog( '#F0FFFF', 20, 100);
 
-
         // ground
         const mesh = new THREE.Mesh( new THREE.PlaneGeometry( 100, 100 ), new THREE.MeshPhongMaterial( { color: 'white', depthWrite: false } ) );
         mesh.rotation.x = - Math.PI / 2;
         mesh.receiveShadow = true;
         scene.add( mesh );
 
-
-        //LUMIERE
-
+        // LUMIERE
         const hemiLight = new THREE.HemisphereLight( '#9ADFF8', "white", 0.2);
         hemiLight.position.set( 0, 20, 0 );
         scene.add( hemiLight );
@@ -68,73 +115,74 @@
         dirLight.castShadow = true;
         scene.add( dirLight );
         
-        //----------- MODEL ------------------------------------
+        // MODEL
         const loader = new GLTFLoader();
 
         loader.load( 'models/gltf/skeleton4.gltf', function ( gltf ) {
-            console.log('gltf : ', gltf);
             model = gltf.scene;
             console.log('jointures : ', model.children[0].children[1].children[0].material.color);
 
-            /**
-             * 
-             */
-            
             //******************    per mesh  *************************************************
-            const fakeData = "";
+            fakeData.forEach(analyse => {
+                let bodyPartName = analyse.bodyPartName;
+                let index = indexAnalyseMap.indexOf(bodyPartName);
+                let color = getColor(analyse.gridValue)
+                model.children[0].children[1].children[index].material.color = new THREE.Color(	color );
 
-            const symColors =  {
-                "red": "#FF686B",
-                "orange": "#EE7404",
-                "yellow" : "#F2B705",
-                "green"  : "#00BB87"
+                //add listener ici sur chaque élément
+
+            });
+
+            function getColor(coef:number | string):string {
+                let color = "";
+                const threshold = [
+                    [1,3, "#00BB87"],
+                    [3,5, "#F2B705"],
+                    [5,7, "#EE7404"],
+                    [7, "#FF686B"],
+                ];
+                try {
+                    threshold.forEach((element,index) => {
+                    if(index != 3) {
+                        if(coef >= element[0] && coef < element[1]) color = element[2].toString();
+                    }else{
+                        //> 7
+                        if(coef >= 7) color = element[1].toString();
+                    }
+                    });
+                    return color;
+                } catch (error) {
+                    throw Error('Error in applyColor');
+                }
             }
-
-            //neck
-            //model.children[0].children[1].children[1].material.color = new THREE.Color(	'red' );
-            //material name model.children[0].children[1].children[1].material.name;
-            //******************************************************************************* */
-            //tous les os --------------------------------------------------------------------
-            //model.children[0].children[2].material.color = new THREE.Color(	'#2A4154' );
-            //---------------------------------------------------------------------------------------
-
+            //model.addEventListener('click', addResultNumber(-0.5,1.5,-0.1, '#00BB87', scene));
             scene.add( model );
+            
 
             model.traverse( function ( object ) {
-
                 if ( object.isMesh ) object.castShadow = true;
-
             } );
 
             skeleton = new THREE.SkeletonHelper( model );
+            
             skeleton.visible = false;
             scene.add( skeleton );
-            const animations = gltf.animations;
+            
+
+            //addResultSphere(-0.5,2,0, '#00BB87', scene);
+            
+
+
+            //---------------------------------------------------------
+            // animation
+            //---------------------------------------------------------
             mixer = new THREE.AnimationMixer( model );
 
-            numAnimations = animations.length;
+            const action = mixer.clipAction( gltf.animations[6] );
+            action.play();
+            //vitesse de l'animation
+            mixer.timeScale = speed;
 
-            for ( let i = 0; i !== numAnimations; ++ i ) {
-                let clip = gltf.animations[ i ];
-                const name = clip.name;
-                if ( baseActions[ name ] ) {
-                    const action = mixer.clipAction( clip );
-                    activateActionSkeletton( action );
-                    baseActions[ name ].action = action;
-                    allActions.push( action );
-                } else if ( additiveActions[ name ] ) {
-                    // Make the clip additive and remove the reference frame
-                    THREE.AnimationUtils.makeClipAdditive( clip );
-
-                    if ( clip.name.endsWith( '_pose' ) )  clip = THREE.AnimationUtils.subclip( clip, clip.name, 2, 3, 30 );
-                    
-                    const action = mixer.clipAction( clip );
-                    activateActionSkeletton( action );
-                    additiveActions[ name ].action = action;
-                    allActions.push( action );
-                }
-            }
-            createPanel();
             animate();
         } );
 
@@ -147,7 +195,7 @@
 
         // camera
         camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 100 );
-        camera.position.set( - 1, 2, 3 );
+        camera.position.set( 1, 2, 4 );
 
         const controls = new OrbitControls( camera, renderer.domElement );
         controls.enablePan = false;
@@ -156,125 +204,106 @@
         controls.update();
 
         window.addEventListener( 'resize', onWindowResize );
+
+        renderer.domElement.addEventListener('click', onClick, false);
+
+        /** add or remove */
+        function onClick(event) {
+            event.preventDefault();
+            //cacher les résultats
+            if(resultDisplayed) {
+                removeResultNumber(scene);
+                resultDisplayed = !resultDisplayed;
+            }else{
+            //afficher les résultats
+            resultDisplayed = !resultDisplayed;
+            let x = -0.5, y = 1.5, z = -0.1;
+            fakeData.forEach(element => {
+                x = x+0.2;
+                y = y+0.2;
+                z = z+0.2;
+                addResultNumber(x,y,z, '#00BB87', scene);
+            });
+            }
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            // var intersects = raycaster.intersectObjects(scene.children);
+            // console.log(intersects);
+            
+            
+
+        }
+    
     }
 
+    
+    /**
+     * 
+     * @param element 
+     * TODO
+     */
+    function handleDataPosition(element):number[] {
+        let x, y, z;
 
-    function createPanel() {
+        return [x, y, z];
+    }
 
-        const panel = new GUI( { width: 310 } );
-        const folder1 = panel.addFolder( 'Base Actions' );
-        const folder2 = panel.addFolder( 'Additive Action Weights' );
-        const folder3 = panel.addFolder( 'General Speed' );
+    function addResultSphere(x, y, z, color, scene) {
+        const geometry = new THREE.IcosahedronGeometry( 0.1, 3 );
+		const material = new THREE.MeshPhongMaterial( { color: color } );
+        const sphere = new THREE.Mesh( geometry, material );
+        sphere.position.set(x, y, z);
+        scene.add( sphere );
+    }
 
-        panelSettings = {
-            'modify time scale': 1.0
-        };
+    function removeResultNumber(scene) {
+        scene.children.forEach(mesh => {
+            console.log('boucle')
+            if(mesh['userData']['result'] && mesh.userData.result === "result") {
+                console.log('text geom ! ')
+                const index = scene.children.indexOf(mesh);
 
-        const baseNames = [ 'None', ...Object.keys( baseActions ) ];
-
-        for ( let i = 0, l = baseNames.length; i !== l; ++ i ) {
-            const name = baseNames[ i ];
-            const settings = baseActions[ name ];
-            panelSettings[ name ] = function () {
-                const currentSettings = baseActions[ currentBaseAction ];
-                const currentAction = currentSettings ? currentSettings.action : null;
-                const action = settings ? settings.action : null;
-                if ( currentAction !== action ) prepareCrossFade( currentAction, action, 0.35 );
-            };
-            crossFadeControls.push( folder1.add( panelSettings, name ) );
-        }
-
-        for ( const name of Object.keys( additiveActions ) ) {
-            const settings = additiveActions[ name ];
-            panelSettings[ name ] = settings.weight;
-            folder2.add( panelSettings, name, 0.0, 1.0, 0.01 ).listen().onChange( function ( weight ) {
-                setWeight( settings.action, weight );
-                settings.weight = weight;
-            } );
-        }
-
-        folder3.add( panelSettings, 'modify time scale', 0.0, 1.5, 0.01 ).onChange( modifyTimeScale );
-        folder1.open();
-        folder2.open();
-        folder3.open();
-
-        crossFadeControls.forEach( function ( control ) {
-            control.setInactive = function () {
-                control.domElement.classList.add( 'control-inactive' );
-            };
-            control.setActive = function () {
-                control.domElement.classList.remove( 'control-inactive' );
-            };
-            const settings = baseActions[ control.property ];
-            if ( ! settings || ! settings.weight ) {
-                control.setInactive();
+                scene.children.splice(index, 1);
             }
+            
+        })
+        console.log('scene : ', scene);
+    }
+
+    function addResultNumber(x, y, z, color, scene) {
+        const loader = new FontLoader();
+        const text = '5'
+
+        loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+
+        const geometry = new TextGeometry( text, {
+            font: font,
+            size: 0.2,
+            height: 0.05,
+            curveSegments: 12,
+            bevelEnabled: true,
+            bevelThickness: 0.02,
+            bevelSize: 0.01,
+            bevelOffset: 0,
+            bevelSegments: 5,
         } );
-    }
 
-    function activateActionSkeletton( action ) {
-        const clip = action.getClip();
-        const settings = baseActions[ clip.name ] || additiveActions[ clip.name ];
-        setWeight( action, settings.weight );
-        action.play();
-    }
-
-    function modifyTimeScale( speed ) {
-        mixer.timeScale = speed;
-    }
-
-    function prepareCrossFade( startAction, endAction, duration ) {
-        // If the current action is 'idle', execute the crossfade immediately;
-        // else wait until the current action has finished its current loop
-        if ( currentBaseAction === 'idle' || ! startAction || ! endAction ) {
-            executeCrossFade( startAction, endAction, duration );
-        } else {
-            synchronizeCrossFade( startAction, endAction, duration );
-        }
-        // Update control colors
-        if ( endAction ) {
-            const clip = endAction.getClip();
-            currentBaseAction = clip.name;
-        } else {
-            currentBaseAction = 'None';
-        }
-        crossFadeControls.forEach( function ( control ) {
-            const name = control.property;
-            if ( name === currentBaseAction ) {
-                control.setActive();
-            } else {
-                control.setInactive();
-            }
+        const material = new THREE.MeshStandardMaterial( {
+            color: 0x99ffff
         } );
-    }
 
-    function synchronizeCrossFade( startAction, endAction, duration ) {
-        mixer.addEventListener( 'loop', onLoopFinished );
-        function onLoopFinished( event ) {
-            if ( event.action === startAction ) {
-                mixer.removeEventListener( 'loop', onLoopFinished );
-                executeCrossFade( startAction, endAction, duration );
-            }
-        }
-    }
+        const textMesh = new THREE.Mesh( geometry, material );
+        textMesh.position.set(x,y,z);
+        textMesh.userData.result = 'result';
+        scene.add( textMesh );
 
-    function executeCrossFade( startAction, endAction, duration ) {
-        // Not only the start action, but also the end action must get a weight of 1 before fading
-        // (concerning the start action this is already guaranteed in this place)
-        if ( endAction ) {
-            setWeight( endAction, 1 );
-            endAction.time = 0;
-            if ( startAction ) {
-                // Crossfade with warping
-                startAction.crossFadeTo( endAction, duration, true );
-            } else {
-                // Fade in
-                endAction.fadeIn( duration );
-            }
-        } else {
-            // Fade out
-            startAction.fadeOut( duration );
-        }
+        } );
+
+         
     }
 
     // This function is needed, since animationAction.crossFadeTo() disables its start action and sets
@@ -299,16 +328,6 @@
         // Render loop
 
         requestAnimationFrame( animate );
-        
-        if(allActions.length > 0) {
-            for ( let i = 0; i !== numAnimations; ++ i ) {
-
-                const action = allActions[ i ];
-                const clip = action.getClip();
-                const settings = baseActions[ clip.name ] || additiveActions[ clip.name ];
-                settings.weight = action.getEffectiveWeight();
-            }
-        }
 
         // Get the time elapsed since the last frame, used for mixer update
 
