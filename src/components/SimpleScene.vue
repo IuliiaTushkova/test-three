@@ -1,6 +1,43 @@
 <template>
     <div>
-      <div id="container"></div>
+        <div class="q-pa-md q-gutter-sm absolute result-acces" id="result-btns-wrapper">
+            <q-page-sticky position="bottom-right" :offset="[18, 18]">
+            <q-fab
+              icon="content_paste"
+              direction="up"
+              color="primary"
+              size="20px"
+            >
+                <q-fab-action @click="displayResult('SCORE_BACK')" color="secondary" icon="hiking" />
+                <q-fab-action @click="displayResult('SCORE_SHOULDER_RIGHT')" color="primary" icon="turn_slight_right" />
+                <q-fab-action @click="displayResult('SCORE_ELBOW_LEFT')" color="primary" icon="turn_slight_left" />
+                <q-fab-action @click="displayResult('SCORE_NECK')" color="primary" icon="person_outline" />
+                <q-fab-action @click="displayResult('SCORE_SHOULDER_RIGHT')" color="primary" icon="group_add" />
+                <q-fab-action @click="displayResult('SCORE_SHOULDER_LEFT')" color="primary" icon="person_add" />
+                <q-fab-action @click="displayResult('SCORE_WRIST_LEFT')" color="primary" icon="front_hand" />
+                <q-fab-action @click="displayResult('SCORE_WRIST_RIGHT')" color="primary" icon="back_hand" />
+            </q-fab>
+          </q-page-sticky>
+        </div>
+        <div id="container"></div>
+        <div id="video" class="video-wrapper hidden">
+            <video controls width="90%" height="50%">
+                <source 
+                        type="video/webm">
+                <source id="analyse-video" 
+                        type="video/mp4">
+                Download the
+                <a href="#">WEBM</a>
+                or
+                <a href="#">MP4</a>
+                video.
+            </video>
+            <p style="text-align:center;">Video Title</p>
+        </div>
+        <div class="q-pa-m absolute q-gutter-sm video-acces">
+            <q-btn round sticky position="bottom-right" color="primary" size="20px" icon="play_arrow"  id="videoAccess"/>
+            <q-btn round  position="bottom-right" color="primary" size="20px" icon="content_paste" class="hidden" id="resultAccess"/>
+        </div>
     </div>
 </template>
 
@@ -11,64 +48,141 @@
     import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
     import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
-     import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-
+    import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
     let scene, renderer, camera;
     let model, skeleton, mixer, clock;
     let resultDisplayed = false;
+    const titleRule = {
+            size:0.1, 
+            height:0.05,
+            pathToFont:'fonts/helvetiker_regular.typeface.json',
+            curveSegments:12
+        }
+
+    const globalScoreText = {
+        size:0.1, 
+        height:0.05,
+        pathToFont:'fonts/helvetiker_regular.typeface.json',
+        curveSegments:12
+    }
+
+    const scoreText = {
+        size:0.1, 
+        height:0.05,
+        pathToFont:'fonts/helvetiker_regular.typeface.json',
+        curveSegments:12
+    }
 
     let speed = 0.6;
-
+    interface resultDataPositionType {
+        bodyPart:string,
+        position:[number, number, number],
+        isActivated:boolean
+    }
+    let resultDataPosition:resultDataPositionType[] = [
+        {
+            "bodyPart" : "ALL",
+            "position" : [-0.5, 1.5, -0.1],
+            "isActivated":false
+        },
+        {
+            "bodyPart" : "SCORE_NECK",
+            "position" : [-0.5, 1.5, -0.1],
+            "isActivated":false
+        },
+        {
+            "bodyPart" : "SCORE_SHOULDER_LEFT",
+            "position" : [-0.5, 1.5, -0.1],
+            "isActivated":false
+        },
+        {
+            "bodyPart" : "SCORE_SHOULDER_RIGHT",
+            "position" : [-0.5, 1.5, -0.1],
+            "isActivated":false
+        },
+        {
+            "bodyPart" : "SCORE_BACK",
+            "position" : [-0.5, 1.5, -0.1],
+            "isActivated":false
+        },
+        {
+            "bodyPart" : "SCORE_ELBOW_LEFT",
+            "position" : [-0.5, 1.5, -0.1],
+            "isActivated":false
+        },
+        {
+            "bodyPart" : "SCORE_ELBOW_RIGHT",
+            "position" : [-0.5, 1.5, -0.1],
+            "isActivated":false
+        },
+        {
+            "bodyPart" : "SCORE_WRIST_LEFT",
+            "position" : [-0.5, 1.5, -0.1],
+            "isActivated":false
+        },
+        {
+            "bodyPart" : "SCORE_WRIST_RIGHT",
+            "position" : [-0.5, 1.5, -0.1],
+            "isActivated":false
+        },
+    ];
+        
     const fakeData = [ 
-                {
-                    analysisId: 1744,
-                    bodyPartName: "SCORE_WRIST_LEFT",
-                    grid:"RULA",
-                    gridValue:1
-                },
-                {
-                    analysisId: 1744,
-                    bodyPartName: "SCORE_ELBOW_RIGHT",
-                    grid:"RULA",
-                    gridValue:1.8
-                },
-                {
-                    analysisId: 1744,
-                    bodyPartName: "SCORE_ELBOW_LEFT",
-                    grid:"RULA",
-                    gridValue:2,
-                },
-                {
-                    analysisId: 1744,
-                    bodyPartName: "SCORE_SHOULDER_RIGHT",
-                    grid:"RULA",
-                    gridValue:1.3
-                },
-                {
-                    analysisId: 1744,
-                    bodyPartName: 'SCORE_SHOULDER_LEFT',
-                    grid:"RULA",
-                    gridValue:8
-                },
-                {
-                    analysisId: 1744,
-                    bodyPartName: 'SCORE_BACK',
-                    grid:"RULA",
-                    gridValue:4
-                },
-                {
-                    analysisId: 1744,
-                    bodyPartName: 'SCORE_NECK',
-                    grid:"RULA",
-                    gridValue:1.3
-                },
-                {
-                    analysisId: 1744,
-                    bodyPartName:'SCORE_WRIST_RIGHT',
-                    grid:"RULA",
-                    gridValue:7
-                }
-            ];
+        {
+            analysisId: 1744,
+            bodyPartName: "SCORE_WRIST_LEFT",
+            grid:"RULA",
+            gridValue:1
+        },
+        {
+            analysisId: 1744,
+            bodyPartName: "SCORE_ELBOW_RIGHT",
+            grid:"RULA",
+            gridValue:1.8
+        },
+        {
+            analysisId: 1744,
+            bodyPartName: "SCORE_ELBOW_LEFT",
+            grid:"RULA",
+            gridValue:2,
+        },
+        {
+            analysisId: 1744,
+            bodyPartName: "SCORE_SHOULDER_RIGHT",
+            grid:"RULA",
+            gridValue:1.3
+        },
+        {
+            analysisId: 1744,
+            bodyPartName: 'SCORE_SHOULDER_LEFT',
+            grid:"RULA",
+            gridValue:8
+        },
+        {
+            analysisId: 1744,
+            bodyPartName: 'SCORE_BACK',
+            grid:"RULA",
+            gridValue:4
+        },
+        {
+            analysisId: 1744,
+            bodyPartName: 'SCORE_NECK',
+            grid:"RULA",
+            gridValue:1.3
+        },
+        {
+            analysisId: 1744,
+            bodyPartName:'SCORE_WRIST_RIGHT',
+            grid:"RULA",
+            gridValue:7
+        },
+        {
+            analysisId: 1744,
+            bodyPartName: "SCORE_GLOBAL_SCORE",
+            grid: "RULA",
+            gridValue: 2.8
+        }
+    ];
 
     const indexAnalyseMap = [
         'noAnalysedPart',
@@ -82,16 +196,141 @@
         'SCORE_WRIST_RIGHT'
     ];
 
+    function displayResult(bodyPart:string) {
+        console.log('au debut')
+        let scoreRula:string,
+            position:[number, number, number],
+            elementIndex:number;
+        
+        
+        resultDataPosition.forEach((element, index) => {
+            if(element.bodyPart === bodyPart) {
+                position = element.position;
+                elementIndex = index;
+            }
+        });
+        if(resultDataPosition[elementIndex].isActivated) {
+            //remove
+            removeResultNumber(scene, bodyPart);
+            resultDataPosition[elementIndex].isActivated = false;
+        }else{
+            //recuperer le score
+            fakeData.forEach(element => {
+                if(element.bodyPartName === bodyPart) scoreRula = element.gridValue.toString();
+            });
+            addText3D(position, scene, scoreRula, scoreText, true, bodyPart);
+            resultDataPosition[elementIndex].isActivated = true;
+        }
+        
+        //toggle 3d model text
+            //cacher les résultats
+            
+               
+                
+            
+
+        
+                
+            
+            
+    }
+
     // declare a ref to hold the element reference
     // the name must match template ref value
     onMounted(() => {
+        initBtns();
         init();
     });
 
+    async function initBtns() {
+        const videBtn = document.getElementById('videoAccess');
+        const resultBtn = document.getElementById('resultAccess');
+        const videoContainer = document.getElementById('video');
+        const canvas = document.getElementById('container');
+        const resultButtons = document.getElementById('result-btns-wrapper');
+        videBtn.addEventListener('click',  () => openVideoInterface(videoContainer, canvas, resultButtons, videBtn, resultBtn));
+
+        resultBtn.addEventListener('click',  () => closeVideoInterface(videoContainer, canvas, resultButtons, videBtn, resultBtn));
+        //load font
+        //font = await loadFont('fonts/helvetiker_regular.typeface.json');
+    }
+
+    /**
+     * open the video interface and close the  3d model
+     */
+    function openVideoInterface(
+            videoContainer:HTMLElement, 
+            canvas:HTMLElement, 
+            resultButtons:HTMLElement, 
+            videoBtn:HTMLElement,
+            resultBtn: HTMLElement
+        ):void {
+        videoContainer.classList.remove('hidden');
+        videoContainer.classList.add('active');
+        canvas.style.display = 'none';
+        resultButtons.style.display = 'none';
+        videoBtn.classList.add('hidden');
+        resultBtn.classList.remove('hidden');
+    }
+
+    /**
+     * close video interface and open the  3d model
+     */
+     function closeVideoInterface(
+        videoContainer:HTMLElement, 
+        canvas:HTMLElement, 
+        resultButtons:HTMLElement, 
+        videoBtn:HTMLElement,
+        resultBtn: HTMLElement
+    ):void {
+        videoContainer.classList.remove('active');
+        videoContainer.classList.add('hidden');
+        canvas.style.display = 'block';
+        resultButtons.style.display = 'block';
+        videoBtn.classList.remove('hidden');
+        resultBtn.classList.add('hidden');
+    }
+
+    /**
+     * return a font to use into Text geometry
+     * @param path to font file
+     */
+    async function loadFont(path:string) {
+        const loader = new FontLoader();
+
+        loader.load( path, function ( font ) {
+            return font;
+        });
+    }
+
+    function getColor(coef:number | string):string {
+                let color = "";
+                const threshold = [
+                    [1,3, "#00BB87"],
+                    [3,5, "#F2B705"],
+                    [5,7, "#EE7404"],
+                    [7, "#FF686B"],
+                ];
+                try {
+                    threshold.forEach((element,index) => {
+                    if(index != 3) {
+                        if(coef >= element[0] && coef < element[1]) color = element[2].toString();
+                    }else{
+                        //> 7
+                        if(coef >= 7) color = element[1].toString();
+                    }
+                    });
+                    return color;
+                } catch (error) {
+                    throw Error('Error in applyColor');
+                }
+            }
+
+    // -----------------------------------------------------------------------------------
+    // 3D Model---------------------------------------------------------------------------
+     // -----------------------------------------------------------------------------------
     function init() {
         const container = document.getElementById('container');
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
         container.innerHTML = "";
         clock = new THREE.Clock();
         scene = new THREE.Scene();
@@ -118,44 +357,29 @@
         // MODEL
         const loader = new GLTFLoader();
 
+      
+
         loader.load( 'models/gltf/skeleton4.gltf', function ( gltf ) {
             model = gltf.scene;
-            console.log('jointures : ', model.children[0].children[1].children[0].material.color);
 
             //******************    per mesh  *************************************************
             fakeData.forEach(analyse => {
                 let bodyPartName = analyse.bodyPartName;
-                let index = indexAnalyseMap.indexOf(bodyPartName);
-                let color = getColor(analyse.gridValue)
-                model.children[0].children[1].children[index].material.color = new THREE.Color(	color );
-
-                //add listener ici sur chaque élément
-
+                if(bodyPartName !== "SCORE_GLOBAL_SCORE") {
+                    let index = indexAnalyseMap.indexOf(bodyPartName);
+                    let color = getColor(analyse.gridValue);
+                    model.children[0].children[1].children[index].material.color = new THREE.Color(	color );
+                }else{
+                    //title : RULA
+                    addText3D([-0.5, 2.4, -0.1], scene, 'RULA', titleRule);
+                    //text : Global
+                    addText3D([-0.5, 2.2, -0.1], scene, 'Global :', globalScoreText);
+                    //score
+                    addText3D([0.01, 2.2, -0.1], scene, analyse.gridValue.toString(), globalScoreText, true);
+                }
             });
 
-            function getColor(coef:number | string):string {
-                let color = "";
-                const threshold = [
-                    [1,3, "#00BB87"],
-                    [3,5, "#F2B705"],
-                    [5,7, "#EE7404"],
-                    [7, "#FF686B"],
-                ];
-                try {
-                    threshold.forEach((element,index) => {
-                    if(index != 3) {
-                        if(coef >= element[0] && coef < element[1]) color = element[2].toString();
-                    }else{
-                        //> 7
-                        if(coef >= 7) color = element[1].toString();
-                    }
-                    });
-                    return color;
-                } catch (error) {
-                    throw Error('Error in applyColor');
-                }
-            }
-            //model.addEventListener('click', addResultNumber(-0.5,1.5,-0.1, '#00BB87', scene));
+            
             scene.add( model );
             
 
@@ -167,12 +391,9 @@
             
             skeleton.visible = false;
             scene.add( skeleton );
-            
 
             //addResultSphere(-0.5,2,0, '#00BB87', scene);
             
-
-
             //---------------------------------------------------------
             // animation
             //---------------------------------------------------------
@@ -188,6 +409,7 @@
 
         renderer = new THREE.WebGLRenderer( { antialias: true } );
         renderer.setPixelRatio( window.devicePixelRatio );
+        //taille à ajuster !
         renderer.setSize( window.innerWidth, window.innerHeight );
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.shadowMap.enabled = true;
@@ -205,38 +427,9 @@
 
         window.addEventListener( 'resize', onWindowResize );
 
-        renderer.domElement.addEventListener('click', onClick, false);
+        //renderer.domElement.addEventListener('click', onClick, false);
 
-        /** add or remove */
-        function onClick(event) {
-            event.preventDefault();
-            //cacher les résultats
-            if(resultDisplayed) {
-                removeResultNumber(scene);
-                resultDisplayed = !resultDisplayed;
-            }else{
-            //afficher les résultats
-            resultDisplayed = !resultDisplayed;
-            let x = -0.5, y = 1.5, z = -0.1;
-            fakeData.forEach(element => {
-                x = x+0.2;
-                y = y+0.2;
-                z = z+0.2;
-                addResultNumber(x,y,z, '#00BB87', scene);
-            });
-            }
-
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-
-            // var intersects = raycaster.intersectObjects(scene.children);
-            // console.log(intersects);
-            
-            
-
-        }
+    
     
     }
 
@@ -252,58 +445,115 @@
         return [x, y, z];
     }
 
-    function addResultSphere(x, y, z, color, scene) {
-        const geometry = new THREE.IcosahedronGeometry( 0.1, 3 );
-		const material = new THREE.MeshPhongMaterial( { color: color } );
-        const sphere = new THREE.Mesh( geometry, material );
-        sphere.position.set(x, y, z);
-        scene.add( sphere );
-    }
+    // function addResultSphere(position:[number, number, number], color:string, scene:any) {
+    //     const geometry = new THREE.IcosahedronGeometry( 0.1, 3 );
+	// 	const material = new THREE.MeshPhongMaterial( { color: color } );
+    //     const sphere = new THREE.Mesh( geometry, material );
+    //     sphere.position.set(x, y, z);
+    //     scene.add( sphere );
+    // }
 
-    function removeResultNumber(scene) {
+    function removeResultNumber(scene:any, bodyPart:string) {
+        console.log('remove !');
         scene.children.forEach(mesh => {
-            console.log('boucle')
-            if(mesh['userData']['result'] && mesh.userData.result === "result") {
-                console.log('text geom ! ')
+            console.log('mesh userData : ', mesh.userData);
+            if(mesh['userData']['bodyPart'] && mesh.userData.bodyPart === bodyPart) {
                 const index = scene.children.indexOf(mesh);
 
                 scene.children.splice(index, 1);
             }
             
         })
-        console.log('scene : ', scene);
     }
 
-    function addResultNumber(x, y, z, color, scene) {
+
+
+    // function addResultNumber(position:[number, number, number], score:string, scene, textToDisplay?:string) {
+    //     const loader = new FontLoader();
+    //     let text = score;
+    //     if(textToDisplay) {
+    //         text = `${textToDisplay} : ${text}`;
+    //     }
+    //     const color = getColor(score);
+
+    //     loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+
+    //     const geometry = new TextGeometry( text, {
+    //         font: font,
+    //         size: 0.2,
+    //         height: 0.05,
+    //         curveSegments: 12,
+    //         bevelEnabled: true,
+    //         bevelThickness: 0.02,
+    //         bevelSize: 0.01,
+    //         bevelOffset: 0,
+    //         bevelSegments: 5,
+    //     } );
+
+    //     const material = new THREE.MeshStandardMaterial( {
+    //         color: color
+    //     } );
+
+    //     const textMesh = new THREE.Mesh( geometry, material );
+    //     textMesh.position.set(position[0],position[1],position[2]);
+    //     textMesh.userData.result = 'result';
+    //     scene.add( textMesh );
+
+    //     } );
+    // }
+
+    /**
+     * Add TextGeometry to a scene
+     * @param position x, y, z
+     * @param scene three.scene object
+     * @param textToDisplay 
+     */
+    async function addText3D(
+        position:[number, number, number], 
+        scene,
+        textToDisplay:string, 
+        textObjectData : {
+            size:number, 
+            height:number,
+            pathToFont:string,
+            curveSegments:number
+        },
+        scoreOnly:boolean=false,
+        bodyPart?:string,
+    ) {
+        let color = '#2A4154'; //default
+        //apply score color
+        if(scoreOnly) {
+            color = getColor(+textToDisplay);
+        }
+        
         const loader = new FontLoader();
-        const text = '5'
 
-        loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+        loader.load( textObjectData.pathToFont, function ( myFont ) {
 
-        const geometry = new TextGeometry( text, {
-            font: font,
-            size: 0.2,
-            height: 0.05,
-            curveSegments: 12,
-            bevelEnabled: true,
-            bevelThickness: 0.02,
-            bevelSize: 0.01,
-            bevelOffset: 0,
-            bevelSegments: 5,
+            const geometry = new TextGeometry( textToDisplay, {
+                font: myFont,
+                size: textObjectData.size,
+                height: textObjectData.height,
+                curveSegments: textObjectData.curveSegments,
+                bevelEnabled: true,
+                bevelThickness: 0.02,
+                bevelSize: 0.01,
+                bevelOffset: 0,
+                bevelSegments: 5,
+            } );
+
+            const material = new THREE.MeshStandardMaterial( {
+                color: color
+            } );
+
+            const textMesh = new THREE.Mesh( geometry, material );
+            textMesh.position.set(position[0],position[1],position[2]);
+            textMesh.userData.bodyPart = bodyPart;
+            scene.add( textMesh );
+
         } );
 
-        const material = new THREE.MeshStandardMaterial( {
-            color: 0x99ffff
-        } );
-
-        const textMesh = new THREE.Mesh( geometry, material );
-        textMesh.position.set(x,y,z);
-        textMesh.userData.result = 'result';
-        scene.add( textMesh );
-
-        } );
-
-         
     }
 
     // This function is needed, since animationAction.crossFadeTo() disables its start action and sets
@@ -349,5 +599,25 @@
     .character-switch-container {
         position: absolute;
         left: 15%;
+    }
+
+    .video-acces {
+        bottom: 6%;
+        left:1%;
+    }
+
+    .result-acces {
+        top: 5%;
+    }
+
+
+
+    .video-wrapper {
+        height: 100vh;
+        width: 100vw;
+    }
+
+    video {
+        margin-top: 4em;
     }
 </style>

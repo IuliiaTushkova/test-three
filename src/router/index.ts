@@ -27,6 +27,11 @@ const routes: Array<RouteRecordRaw> = [
           },
     ]
   },
+  {
+    path: '/symalean',
+    name: 'symalean',
+    component: SimpleScene
+  },
 ]
 
 const router = createRouter({
