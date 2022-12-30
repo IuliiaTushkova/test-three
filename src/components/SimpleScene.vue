@@ -8,14 +8,15 @@
               color="primary"
               size="20px"
             >
-                <q-fab-action @click="displayResult('SCORE_BACK')" color="secondary" icon="hiking" />
-                <q-fab-action @click="displayResult('SCORE_SHOULDER_RIGHT')" color="primary" icon="turn_slight_right" />
-                <q-fab-action @click="displayResult('SCORE_ELBOW_LEFT')" color="primary" icon="turn_slight_left" />
-                <q-fab-action @click="displayResult('SCORE_NECK')" color="primary" icon="person_outline" />
-                <q-fab-action @click="displayResult('SCORE_SHOULDER_RIGHT')" color="primary" icon="group_add" />
-                <q-fab-action @click="displayResult('SCORE_SHOULDER_LEFT')" color="primary" icon="person_add" />
-                <q-fab-action @click="displayResult('SCORE_WRIST_LEFT')" color="primary" icon="front_hand" />
-                <q-fab-action @click="displayResult('SCORE_WRIST_RIGHT')" color="primary" icon="back_hand" />
+                <q-fab-action @click="displayResult('SCORE_BACK')" id="score_back" color="primary" icon="hiking" />
+                <q-fab-action @click="displayResult('SCORE_ELBOW_RIGHT')" id="score_elbow_right" color="primary" icon="turn_slight_right" />
+                <q-fab-action @click="displayResult('SCORE_ELBOW_LEFT')" id="score_elbow_left" color="primary" icon="turn_slight_left" />
+                <q-fab-action @click="displayResult('SCORE_NECK')" id="score_neck" color="primary" icon="person_outline" />
+                <q-fab-action @click="displayResult('SCORE_SHOULDER_RIGHT')" id="score_shoulder_right" color="primary" icon="group_add" />
+                <q-fab-action @click="displayResult('SCORE_SHOULDER_LEFT')" id="score_shoulder_left" color="primary" icon="person_add" />
+                <q-fab-action @click="displayResult('SCORE_WRIST_LEFT')" id="score_wrist_left" color="primary" icon="front_hand" />
+                <q-fab-action @click="displayResult('SCORE_WRIST_RIGHT')" id="score_wrist_right" color="primary" icon="back_hand" />
+                <q-fab-action @click="displayResult('ALL')" id="all" color="primary" icon="accessibility" />
             </q-fab>
           </q-page-sticky>
         </div>
@@ -51,7 +52,6 @@
     import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
     let scene, renderer, camera;
     let model, skeleton, mixer, clock;
-    let resultDisplayed = false;
     const titleRule = {
             size:0.1, 
             height:0.05,
@@ -67,7 +67,7 @@
     }
 
     const scoreText = {
-        size:0.1, 
+        size:0.19, 
         height:0.05,
         pathToFont:'fonts/helvetiker_regular.typeface.json',
         curveSegments:12
@@ -81,48 +81,43 @@
     }
     let resultDataPosition:resultDataPositionType[] = [
         {
-            "bodyPart" : "ALL",
-            "position" : [-0.5, 1.5, -0.1],
-            "isActivated":false
-        },
-        {
             "bodyPart" : "SCORE_NECK",
-            "position" : [-0.5, 1.5, -0.1],
+            "position" : [-0.15, 1.5, 0.1],
             "isActivated":false
         },
         {
             "bodyPart" : "SCORE_SHOULDER_LEFT",
-            "position" : [-0.5, 1.5, -0.1],
+            "position" : [-0.5, 1.3, -0.1],
             "isActivated":false
         },
         {
             "bodyPart" : "SCORE_SHOULDER_RIGHT",
-            "position" : [-0.5, 1.5, -0.1],
+            "position" : [0.29, 1.3, -0.1],
             "isActivated":false
         },
         {
             "bodyPart" : "SCORE_BACK",
-            "position" : [-0.5, 1.5, -0.1],
+            "position" : [0, 1, 0.1],
             "isActivated":false
         },
         {
             "bodyPart" : "SCORE_ELBOW_LEFT",
-            "position" : [-0.5, 1.5, -0.1],
+            "position" : [-0.6, 1, -0.1],
             "isActivated":false
         },
         {
             "bodyPart" : "SCORE_ELBOW_RIGHT",
-            "position" : [-0.5, 1.5, -0.1],
+            "position" : [0.4, 1, -0.1],
             "isActivated":false
         },
         {
             "bodyPart" : "SCORE_WRIST_LEFT",
-            "position" : [-0.5, 1.5, -0.1],
+            "position" : [-0.5, 0.7, -0.1],
             "isActivated":false
         },
         {
             "bodyPart" : "SCORE_WRIST_RIGHT",
-            "position" : [-0.5, 1.5, -0.1],
+            "position" : [0.35, 0.7, -0.1],
             "isActivated":false
         },
     ];
@@ -196,31 +191,56 @@
         'SCORE_WRIST_RIGHT'
     ];
 
+    function getBtnData(index:number):string {
+        if(resultDataPosition[index].isActivated) {
+            return "secondary";
+        }else{
+            return "#2A4154";
+        }
+        
+    }
+
     function displayResult(bodyPart:string) {
-        console.log('au debut')
         let scoreRula:string,
             position:[number, number, number],
             elementIndex:number;
         
-        
-        resultDataPosition.forEach((element, index) => {
-            if(element.bodyPart === bodyPart) {
-                position = element.position;
-                elementIndex = index;
-            }
-        });
-        if(resultDataPosition[elementIndex].isActivated) {
-            //remove
-            removeResultNumber(scene, bodyPart);
-            resultDataPosition[elementIndex].isActivated = false;
-        }else{
-            //recuperer le score
-            fakeData.forEach(element => {
-                if(element.bodyPartName === bodyPart) scoreRula = element.gridValue.toString();
+        if(bodyPart !== "ALL") {
+            resultDataPosition.forEach((element, index) => {
+                if(element.bodyPart === bodyPart) {
+                    position = element.position;
+                    elementIndex = index;
+                }
             });
-            addText3D(position, scene, scoreRula, scoreText, true, bodyPart);
-            resultDataPosition[elementIndex].isActivated = true;
+            if(resultDataPosition[elementIndex].isActivated) {
+                //remove
+                removeResultNumber(scene, bodyPart);
+                resultDataPosition[elementIndex].isActivated = false;
+            }else{
+                //recuperer le score
+                fakeData.forEach(element => {
+                    if(element.bodyPartName === bodyPart) scoreRula = element.gridValue.toString();
+                });
+                addText3D(position, scene, scoreRula, scoreText, true, bodyPart);
+                resultDataPosition[elementIndex].isActivated = true;
+            }
+        }else{
+            //display tous les résultats
+            resultDataPosition.forEach(element => {
+                if(element.isActivated) {
+                    removeResultNumber(scene, element.bodyPart);
+                    element.isActivated = false;
+                }else{
+                    fakeData.forEach(data=> {
+                        if(data.bodyPartName !== "SCORE_GLOBAL_SCORE") {
+                            if(data.bodyPartName === element.bodyPart) scoreRula = data.gridValue.toString();
+                        }
+                    });
+                    addText3D(element.position, scene, scoreRula, scoreText, true, element.bodyPart);
+                }
+            });
         }
+        
         
         //toggle 3d model text
             //cacher les résultats
@@ -251,8 +271,6 @@
         videBtn.addEventListener('click',  () => openVideoInterface(videoContainer, canvas, resultButtons, videBtn, resultBtn));
 
         resultBtn.addEventListener('click',  () => closeVideoInterface(videoContainer, canvas, resultButtons, videBtn, resultBtn));
-        //load font
-        //font = await loadFont('fonts/helvetiker_regular.typeface.json');
     }
 
     /**
@@ -455,8 +473,8 @@
 
     function removeResultNumber(scene:any, bodyPart:string) {
         console.log('remove !');
+      //  document.getElementById(bodyPart.toLowerCase()).setAttribute("color", "primary");
         scene.children.forEach(mesh => {
-            console.log('mesh userData : ', mesh.userData);
             if(mesh['userData']['bodyPart'] && mesh.userData.bodyPart === bodyPart) {
                 const index = scene.children.indexOf(mesh);
 
@@ -524,8 +542,10 @@
         let color = '#2A4154'; //default
         //apply score color
         if(scoreOnly) {
+            if(bodyPart) document.getElementById(bodyPart.toLowerCase()).style.background = "#F2B705";
             color = getColor(+textToDisplay);
         }
+        console.log('data : ', textObjectData);
         
         const loader = new FontLoader();
 
@@ -552,7 +572,7 @@
             textMesh.userData.bodyPart = bodyPart;
             scene.add( textMesh );
 
-        } );
+       } );
 
     }
 
