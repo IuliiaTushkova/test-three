@@ -8,14 +8,14 @@
               color="primary"
               size="20px"
             >
-                <q-fab-action @click="displayResult('SCORE_BACK')" id="score_back" color="primary" icon="hiking" />
-                <q-fab-action @click="displayResult('SCORE_ELBOW_RIGHT')" id="score_elbow_right" color="primary" icon="turn_slight_right" />
-                <q-fab-action @click="displayResult('SCORE_ELBOW_LEFT')" id="score_elbow_left" color="primary" icon="turn_slight_left" />
-                <q-fab-action @click="displayResult('SCORE_NECK')" id="score_neck" color="primary" icon="person_outline" />
-                <q-fab-action @click="displayResult('SCORE_SHOULDER_RIGHT')" id="score_shoulder_right" color="primary" icon="group_add" />
-                <q-fab-action @click="displayResult('SCORE_SHOULDER_LEFT')" id="score_shoulder_left" color="primary" icon="person_add" />
-                <q-fab-action @click="displayResult('SCORE_WRIST_LEFT')" id="score_wrist_left" color="primary" icon="front_hand" />
-                <q-fab-action @click="displayResult('SCORE_WRIST_RIGHT')" id="score_wrist_right" color="primary" icon="back_hand" />
+                <q-fab-action @click="displayResult('SCORE_BACK')" id="score_back" color="primary" icon="img:/assets/icons/dos.svg" />
+                <q-fab-action @click="displayResult('SCORE_ELBOW_RIGHT')" id="score_elbow_right" color="primary" icon="img:/assets/icons/elbowRight.svg" />
+                <q-fab-action @click="displayResult('SCORE_ELBOW_LEFT')" id="score_elbow_left" color="primary" icon="img:/assets/icons/elbowLeft.svg" />
+                <q-fab-action @click="displayResult('SCORE_NECK')" id="score_neck" color="primary" icon="img:/assets/icons/cou.svg" />
+                <q-fab-action @click="displayResult('SCORE_SHOULDER_RIGHT')" id="score_shoulder_right" color="primary" icon="img:/assets/icons/shoulderRight.svg" />
+                <q-fab-action @click="displayResult('SCORE_SHOULDER_LEFT')" id="score_shoulder_left" color="primary" icon="img:/assets/icons/shoulderLeft.svg" />
+                <q-fab-action @click="displayResult('SCORE_WRIST_LEFT')" id="score_wrist_left" color="primary" icon="img:/assets/icons/wristLeft.svg" />
+                <q-fab-action @click="displayResult('SCORE_WRIST_RIGHT')" id="score_wrist_right" color="primary" icon="img:/assets/icons/wristRight.svg" />
                 <q-fab-action @click="displayResult('ALL')" id="all" color="primary" icon="accessibility" />
             </q-fab>
           </q-page-sticky>
@@ -197,7 +197,6 @@
         }else{
             return "#2A4154";
         }
-        
     }
 
     function displayResult(bodyPart:string) {
@@ -237,22 +236,10 @@
                         }
                     });
                     addText3D(element.position, scene, scoreRula, scoreText, true, element.bodyPart);
+                    element.isActivated = true;
                 }
             });
         }
-        
-        
-        //toggle 3d model text
-            //cacher les résultats
-            
-               
-                
-            
-
-        
-                
-            
-            
     }
 
     // declare a ref to hold the element reference
@@ -309,18 +296,6 @@
         resultBtn.classList.add('hidden');
     }
 
-    /**
-     * return a font to use into Text geometry
-     * @param path to font file
-     */
-    async function loadFont(path:string) {
-        const loader = new FontLoader();
-
-        loader.load( path, function ( font ) {
-            return font;
-        });
-    }
-
     function getColor(coef:number | string):string {
                 let color = "";
                 const threshold = [
@@ -343,10 +318,9 @@
                     throw Error('Error in applyColor');
                 }
             }
-
     // -----------------------------------------------------------------------------------
     // 3D Model---------------------------------------------------------------------------
-     // -----------------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------
     function init() {
         const container = document.getElementById('container');
         container.innerHTML = "";
@@ -375,8 +349,6 @@
         // MODEL
         const loader = new GLTFLoader();
 
-      
-
         loader.load( 'models/gltf/skeleton4.gltf', function ( gltf ) {
             model = gltf.scene;
 
@@ -397,20 +369,15 @@
                 }
             });
 
-            
             scene.add( model );
             
-
             model.traverse( function ( object ) {
                 if ( object.isMesh ) object.castShadow = true;
             } );
 
             skeleton = new THREE.SkeletonHelper( model );
-            
             skeleton.visible = false;
             scene.add( skeleton );
-
-            //addResultSphere(-0.5,2,0, '#00BB87', scene);
             
             //---------------------------------------------------------
             // animation
@@ -444,32 +411,9 @@
         controls.update();
 
         window.addEventListener( 'resize', onWindowResize );
-
-        //renderer.domElement.addEventListener('click', onClick, false);
-
-    
     
     }
 
-    
-    /**
-     * 
-     * @param element 
-     * TODO
-     */
-    function handleDataPosition(element):number[] {
-        let x, y, z;
-
-        return [x, y, z];
-    }
-
-    // function addResultSphere(position:[number, number, number], color:string, scene:any) {
-    //     const geometry = new THREE.IcosahedronGeometry( 0.1, 3 );
-	// 	const material = new THREE.MeshPhongMaterial( { color: color } );
-    //     const sphere = new THREE.Mesh( geometry, material );
-    //     sphere.position.set(x, y, z);
-    //     scene.add( sphere );
-    // }
 
     function removeResultNumber(scene:any, bodyPart:string) {
         console.log('remove !');
@@ -483,42 +427,6 @@
             
         })
     }
-
-
-
-    // function addResultNumber(position:[number, number, number], score:string, scene, textToDisplay?:string) {
-    //     const loader = new FontLoader();
-    //     let text = score;
-    //     if(textToDisplay) {
-    //         text = `${textToDisplay} : ${text}`;
-    //     }
-    //     const color = getColor(score);
-
-    //     loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
-
-    //     const geometry = new TextGeometry( text, {
-    //         font: font,
-    //         size: 0.2,
-    //         height: 0.05,
-    //         curveSegments: 12,
-    //         bevelEnabled: true,
-    //         bevelThickness: 0.02,
-    //         bevelSize: 0.01,
-    //         bevelOffset: 0,
-    //         bevelSegments: 5,
-    //     } );
-
-    //     const material = new THREE.MeshStandardMaterial( {
-    //         color: color
-    //     } );
-
-    //     const textMesh = new THREE.Mesh( geometry, material );
-    //     textMesh.position.set(position[0],position[1],position[2]);
-    //     textMesh.userData.result = 'result';
-    //     scene.add( textMesh );
-
-    //     } );
-    // }
 
     /**
      * Add TextGeometry to a scene
@@ -545,7 +453,6 @@
             if(bodyPart) document.getElementById(bodyPart.toLowerCase()).style.background = "#F2B705";
             color = getColor(+textToDisplay);
         }
-        console.log('data : ', textObjectData);
         
         const loader = new FontLoader();
 
@@ -571,9 +478,7 @@
             textMesh.position.set(position[0],position[1],position[2]);
             textMesh.userData.bodyPart = bodyPart;
             scene.add( textMesh );
-
        } );
-
     }
 
     // This function is needed, since animationAction.crossFadeTo() disables its start action and sets
@@ -607,6 +512,7 @@
 
         mixer.update( mixerUpdateDelta );
         renderer.render( scene, camera );
+
     }
 
 </script>
